@@ -7,7 +7,7 @@ const getCrypto = () => {
   if (
     typeof globalThis !== "undefined" &&
     globalThis.crypto &&
-    globalThis.crypto.getRandomValues
+    typeof globalThis.crypto.getRandomValues === "function"
   ) {
     return globalThis.crypto;
   }

@@ -21,11 +21,38 @@ userDoc.on("update", async (update: Uint8Array) => {
 });
 
 const DB_NAME = "worksphere-offline";
- feat/1628-offline-favorites-sync
 const DB_VERSION = 6;
 
-const DB_VERSION = 5;
- main
+export async function withLeaderLock<T>(
+  lockName: string,
+  callback: () => Promise<T>,
+): Promise<{ acquired: boolean; result?: T }> {
+  try {
+    const res = await withWebLock(callback, lockName);
+    return { acquired: true, result: res };
+  } catch {
+    return { acquired: false };
+  }
+}
+
+export async function executeWithRetry<T>(
+  fn: () => Promise<T>,
+  retries = 3,
+  delayMs = 100,
+): Promise<T> {
+  let lastError: unknown;
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      if (i < retries - 1) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs * Math.pow(2, i)));
+      }
+    }
+  }
+  throw lastError;
+}
 
 export interface OfflineVenue {
   id: string;
@@ -163,15 +190,17 @@ export async function initOfflineDB(): Promise<IDBDatabase> {
           receiptStore.createIndex("createdAt", "createdAt", { unique: false });
         }
 
- feat/1628-offline-favorites-sync
         // Pending favorites store
         if (!database.objectStoreNames.contains("pendingFavorites")) {
           database.createObjectStore("pendingFavorites", {
+            keyPath: "id",
+            autoIncrement: true,
+          });
+        }
 
         // Preference reranking cache store
         if (!database.objectStoreNames.contains("preference_rankings")) {
           database.createObjectStore("preference_rankings", {
- main
             keyPath: "id",
           });
         }
