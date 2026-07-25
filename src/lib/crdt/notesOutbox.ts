@@ -131,15 +131,22 @@ export async function flushNotesOutbox(
   const conflicts: NotesOutboxConflict[] = [];
 
   for (const entry of pending) {
+    const entryDoc = new Y.Doc();
+    Y.applyUpdate(entryDoc, new Uint8Array(entry.update));
+    const entryText = entryDoc.getText("group-notes").toString();
+    entryDoc.destroy();
+
     const testDoc = new Y.Doc();
     Y.applyUpdate(testDoc, Y.encodeStateAsUpdate(doc));
-    const testText = testDoc.getText("group-notes");
-    const textBefore = testText.toString();
+    const textBefore = testDoc.getText("group-notes").toString();
     Y.applyUpdate(testDoc, new Uint8Array(entry.update));
-    const textAfter = testText.toString();
+    const textAfter = testDoc.getText("group-notes").toString();
     testDoc.destroy();
 
-    if (textBefore === textAfter) {
+    const isConflicting =
+      textBefore !== "" && textBefore !== entryText && textBefore !== textAfter;
+
+    if (!isConflicting) {
       Y.applyUpdate(doc, new Uint8Array(entry.update), "outbox-flush");
       if (entry.id != null) await db.delete(OUTBOX_STORE, entry.id);
     } else {
