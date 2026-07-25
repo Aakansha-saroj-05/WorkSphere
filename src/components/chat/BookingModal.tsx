@@ -12,6 +12,7 @@ import {
   Landmark,
   Calendar,
   Clock,
+  AlertTriangle,
   User,
   Download,
   MapPin,
@@ -31,6 +32,8 @@ import confetti from "canvas-confetti";
 import { Venue } from "./ChatMessages";
 import { trackEvent } from "@/lib/analytics";
 import { ReceiptVerificationModal } from "@/components/receipt/ReceiptVerificationModal";
+import { SignatureVerificationBadge } from "@/components/receipt/SignatureVerificationBadge";
+import { usePdfSignatureVerifier } from "@/hooks/usePdfSignatureVerifier";
 
 import { getCalendarUrls, downloadICS } from "@/lib/calendar";
 import GuestsInput, { type GuestEntry } from "@/components/GuestsInput";
@@ -70,7 +73,7 @@ export function BookingModal({
   mode = "booking",
 }: BookingModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const _retryAfter = useRateLimit("book");
+  const retryAfter = useRateLimit("book");
   const [step, setStep] = useState<
     "details" | "payment" | "processing" | "success" | "history"
   >("details");
@@ -232,10 +235,29 @@ export function BookingModal({
       setStep(mode === "history" ? "history" : "details");
       setGuests([]);
       setGuestInviteStatus("idle");
+      setVerificationStatuses({});
+      setActiveVerifyBookingId(null);
     } else if (mode === "history") {
       fetchHistory();
     }
   }, [isOpen, mode]);
+
+  useEffect(() => {
+    if (!activeVerifyBookingId) return;
+    if (verifHookStatus === "verified" || verifHookStatus === "invalid") {
+      setVerificationStatuses((prev) => ({
+        ...prev,
+        [activeVerifyBookingId]: { status: verifHookStatus, result: verifResult },
+      }));
+      setActiveVerifyBookingId(null);
+    } else if (verifHookStatus === "error" || verifError) {
+      setVerificationStatuses((prev) => ({
+        ...prev,
+        [activeVerifyBookingId]: { status: "error" },
+      }));
+      setActiveVerifyBookingId(null);
+    }
+  }, [verifHookStatus, verifResult, verifError, activeVerifyBookingId]);
 
   useEffect(() => {
     if (!isOpen || !modalRef.current) return;
@@ -343,6 +365,30 @@ export function BookingModal({
     setReceiptDialogBookingId(null);
   };
 
+  const handleVerifyReceipt = async (bookingId: string) => {
+    setVerificationStatuses((prev) => ({
+      ...prev,
+      [bookingId]: { status: "verifying" },
+    }));
+    setActiveVerifyBookingId(bookingId);
+    reset();
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}/download`);
+      if (!response.ok) throw new Error("Failed to download receipt");
+      const blob = await response.blob();
+      const file = new File([blob], `receipt-${bookingId}.pdf`, {
+        type: "application/pdf",
+      });
+      await verify(file);
+    } catch {
+      setActiveVerifyBookingId(null);
+      setVerificationStatuses((prev) => ({
+        ...prev,
+        [bookingId]: { status: "error" },
+      }));
+    }
+  };
+
   const handleBulkExport = async (format: "pdf" | "csv") => {
     setIsExporting(true);
     try {
@@ -435,6 +481,11 @@ export function BookingModal({
       const responseData = await response.json();
 
       if (!response.ok) {
+        if (response.status === 429) {
+          setIsSubmitting(false);
+          setStep("details");
+          return;
+        }
         throw new Error(
           responseData.error || "Booking failed. Please try again.",
         );
@@ -644,6 +695,19 @@ export function BookingModal({
                             >
                               <Download className="w-3.5 h-3.5" />
                               Download Receipt
+                            </button>
+                            <button
+                              onClick={() => handleVerifyReceipt(booking.id)}
+                              className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-all"
+                            >
+                              <SignatureVerificationBadge
+                                status={
+                                  (verificationStatuses[booking.id]
+                                    ?.status as any) || "idle"
+                                }
+                                result={verificationStatuses[booking.id]?.result}
+                                className="!p-0 !border-0 !bg-transparent"
+                              />
                             </button>
                             <div className="flex gap-2">
                               <a
@@ -969,9 +1033,27 @@ export function BookingModal({
                 </div>
               </div>
 
+              {retryAfter > 0 && (
+                <div className="flex items-center gap-2.5 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 animate-in slide-in-from-top-2 duration-300">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold uppercase tracking-wider">
+                      Rate Limit Reached
+                    </p>
+                    <p className="text-[11px] font-mono font-semibold mt-0.5">
+                      Retry in{" "}
+                      <span className="tabular-nums tracking-tight">
+                        {retryAfter}s
+                      </span>
+                    </p>
+                  </div>
+                  <Clock className="w-4 h-4 shrink-0 animate-pulse" />
+                </div>
+              )}
+
               <button
                 onClick={handleBooking}
-                disabled={isSubmitting}
+                disabled={isSubmitting || retryAfter > 0}
                 className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-600/50 text-white font-black uppercase tracking-widest py-6 rounded-[1.5rem] flex items-center justify-center gap-3 shadow-2xl shadow-green-500/20 hover:scale-[1.02] disabled:hover:scale-100 transition-all active:scale-95 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
