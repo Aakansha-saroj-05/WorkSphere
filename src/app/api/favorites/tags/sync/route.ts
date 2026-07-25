@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { ensureUserExists } from "@/lib/auth";
+ feat/1628-offline-favorites-sync
 import { updateUserPreferencesSummary } from "@/lib/agents/MemoryAgent";
-import { syncFavoriteTagsSchema, validateRequest } from "@/lib/validations";
-import { syncFavoriteTagsBulk } from "@/lib/favoriteTagSync";
 
 interface SyncOperation {
   venueId: string;
@@ -12,51 +11,32 @@ interface SyncOperation {
   timestamp: number;
 }
 
-// POST /api/favorites/tags/sync - Bulk-update favorites & tags across saved venues
 export async function POST(req: NextRequest) {
   try {
     const { userId } = await auth();
+
+
+import { syncFavoriteTagsSchema, validateRequest } from "@/lib/validations";
+import { syncFavoriteTagsBulk } from "@/lib/favoriteTagSync";
+
+// POST /api/favorites/tags/sync - Bulk-update tags across saved venues
+export async function POST(req: NextRequest) {
+  try {
+    const { userId } = await auth();
+ main
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     await ensureUserExists(userId);
+
     const body = await req.json();
-
-    // 1. Handle Tag Sync Updates if present
-    if (body.updates && Array.isArray(body.updates)) {
-      const validation = validateRequest(syncFavoriteTagsSchema, body);
-      if (!validation.success) {
-        return NextResponse.json({ error: validation.error }, { status: 400 });
-      }
-
-      const { updates } = validation.data;
-      const tagIds = updates.map((u) => u.id);
-
-      const ownedTags = await prisma.favoriteTag.findMany({
-        where: {
-          id: { in: tagIds },
-          favorite: { userId },
-        },
-        select: { id: true },
-      });
-
-      if (ownedTags.length !== new Set(tagIds).size) {
-        return NextResponse.json(
-          { error: "One or more tags were not found" },
-          { status: 404 },
-        );
-      }
-
-      const tags = await syncFavoriteTagsBulk(updates);
-      return NextResponse.json({ tags });
-    }
-
-    // 2. Handle Offline Operations Sync if present
+ feat/1628-offline-favorites-sync
     const operations: SyncOperation[] = body.operations || [];
+
     if (!operations || !Array.isArray(operations)) {
       return NextResponse.json(
-        { error: "Invalid operations or updates array" },
+        { error: "Invalid operations array" },
         { status: 400 },
       );
     }
@@ -64,7 +44,7 @@ export async function POST(req: NextRequest) {
     // Sort operations by timestamp so they are processed in order
     operations.sort((a, b) => a.timestamp - b.timestamp);
 
-    // Keep track of final action per venueId
+    // Keep track of the final action for each venueId to avoid redundant db operations
     const finalActions = new Map<string, "add" | "remove">();
     for (const op of operations) {
       finalActions.set(op.venueId, op.action);
@@ -73,6 +53,7 @@ export async function POST(req: NextRequest) {
     let processedCount = 0;
 
     for (const [venueId, action] of finalActions.entries()) {
+      // Find venue in DB
       let venue = await prisma.venue.findFirst({
         where: {
           OR: [{ id: venueId }, { placeId: venueId }],
@@ -81,6 +62,7 @@ export async function POST(req: NextRequest) {
 
       if (action === "add") {
         if (!venue) {
+          // Upsert venue if missing
           venue = await prisma.venue.create({
             data: {
               placeId: venueId,
@@ -118,7 +100,7 @@ export async function POST(req: NextRequest) {
               },
             });
           } catch (e: any) {
-            if (e.code !== "P2025") throw e;
+            if (e.code !== "P2025") throw e; // ignore already deleted
           }
         }
         processedCount++;
@@ -126,6 +108,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (processedCount > 0) {
+      // Trigger background sync just like the regular POST/DELETE
       updateUserPreferencesSummary(userId).catch((err) =>
         console.error(
           "[FavoriteAPI Bulk Sync] Background preference sync failed:",
@@ -135,6 +118,37 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ success: true, processed: processedCount });
+  } catch (error) {
+    console.error("POST /api/favorites/tags/sync error:", error);
+    return NextResponse.json(
+      { error: "Failed to sync favorites" },
+=======
+    const validation = validateRequest(syncFavoriteTagsSchema, body);
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
+    const { updates } = validation.data;
+    const tagIds = updates.map((u) => u.id);
+
+    const ownedTags = await prisma.favoriteTag.findMany({
+      where: {
+        id: { in: tagIds },
+        favorite: { userId },
+      },
+      select: { id: true },
+    });
+
+    if (ownedTags.length !== new Set(tagIds).size) {
+      return NextResponse.json(
+        { error: "One or more tags were not found" },
+        { status: 404 },
+      );
+    }
+
+    const tags = await syncFavoriteTagsBulk(updates);
+
+    return NextResponse.json({ tags });
   } catch (error: unknown) {
     console.error("POST /api/favorites/tags/sync error:", error);
 
@@ -151,7 +165,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: "Failed to sync favorites or tags" },
+ main
       { status: 500 },
     );
   }

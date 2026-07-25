@@ -219,7 +219,8 @@ describe("NotificationSettings", () => {
       expect(screen.getByText("Crop Avatar")).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /Apply|Crop and upload/i }));
+    // Trigger the mocked cropper's onCropComplete
+    fireEvent.click(screen.getByRole("button", { name: /Apply/i }));
 
     expect(screen.queryByTestId("cropper-mock")).not.toBeInTheDocument();
   }, 20000);
