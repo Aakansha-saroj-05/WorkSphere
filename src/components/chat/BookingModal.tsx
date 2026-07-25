@@ -108,7 +108,11 @@ export function BookingModal({
   const [showLogo, setShowLogo] = useState(true);
   const [dateFilter, setDateFilter] = useState("all");
   const [verifyModalOpen, setVerifyModalOpen] = useState(false);
-  const [bookingError, setBookingError] = useState<string | null>(null);
+  const [verificationStatuses, setVerificationStatuses] = useState<
+    Record<string, { status: string; result?: any }>
+  >({});
+  const [activeVerifyBookingId, setActiveVerifyBookingId] = useState<string | null>(null);
+  const { status: verifHookStatus, result: verifResult, error: verifError, verify, reset } = usePdfSignatureVerifier();
 
   const modalRef = useRef<HTMLDivElement>(null);
   const pointerDownStartedOnBackdrop = useRef(false);
