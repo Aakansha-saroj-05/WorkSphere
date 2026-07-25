@@ -424,8 +424,8 @@ export function useWebRTCMesh({ roomId, userId }: Options) {
             peerId,
             { analyser, dataArray },
           ] of analysersRef.current.entries()) {
-            analyser.getFloatTimeDomainData(dataArray);
-            const rms = calculateRMS(dataArray);
+            analyser.getFloatTimeDomainData(dataArray as any);
+            const rms = calculateRMS(dataArray as any);
             const rawDb = rmsToDecibels(rms); // 30 dB (silence) to 120 dB
 
             // Apply Exponential Moving Average (EMA) with alpha = 0.2
