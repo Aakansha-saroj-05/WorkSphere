@@ -129,6 +129,7 @@ export async function flushNotesOutbox(
   const db = await getNotesCrdtDb();
   const pending = await db.getAllFromIndex(OUTBOX_STORE, "by-room", roomId);
   const conflicts: NotesOutboxConflict[] = [];
+  const entriesToFlush: NotesOutboxEntry[] = [];
 
   for (const entry of pending) {
     const entryDoc = new Y.Doc();
@@ -147,10 +148,25 @@ export async function flushNotesOutbox(
       textBefore !== "" && textBefore !== entryText && textBefore !== textAfter;
 
     if (!isConflicting) {
-      Y.applyUpdate(doc, new Uint8Array(entry.update), "outbox-flush");
-      if (entry.id != null) await db.delete(OUTBOX_STORE, entry.id);
+      entriesToFlush.push(entry);
     } else {
-      conflicts.push({ entry, textBefore, textAfter });
+      conflicts.push({
+        entry,
+        textBefore,
+        textAfter,
+      });
+    }
+  }
+
+  doc.transact(() => {
+    for (const entry of entriesToFlush) {
+      Y.applyUpdate(doc, new Uint8Array(entry.update), "outbox-flush");
+    }
+  }, "outbox-flush");
+
+  for (const entry of entriesToFlush) {
+    if (entry.id != null) {
+      await db.delete(OUTBOX_STORE, entry.id);
     }
   }
 
