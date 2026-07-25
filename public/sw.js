@@ -936,7 +936,9 @@ function openIndexedDB() {
         if (!db.objectStoreNames.contains("pendingFavorites")) {
           db.createObjectStore("pendingFavorites", {
             keyPath: "id",
+            autoIncrement: true,
           });
+        }
 
         // Availability deltas store for periodic background sync (Issue #1126)
         if (!db.objectStoreNames.contains("availabilityDeltas")) {
@@ -944,7 +946,6 @@ function openIndexedDB() {
             keyPath: "venueId",
           });
           deltaStore.createIndex("timestamp", "timestamp", { unique: false });
- main
         }
       };
     } catch (err) {
