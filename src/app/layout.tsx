@@ -199,6 +199,7 @@ export default async function RootLayout({
       <head>
         <script
           id="theme-init"
+          suppressHydrationWarning
           nonce={nonce}
           dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
         />
