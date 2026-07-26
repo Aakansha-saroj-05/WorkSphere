@@ -132,6 +132,9 @@ model Venue {
   maxCapacity         Int                 @default(50)
   checkIns            CheckIn[]
   xrAnchors           XRAnchor[]
+  isClaimed           Boolean             @default(false)
+  ownerId             String?
+  hostMessage         String?
 
   @@index([latitude, longitude])
   @@index([category])
@@ -522,21 +525,8 @@ model Folder {
   members    FolderMember[]
   upvoteRefs FolderUpvote[]
   invites    FolderInvite[]
-  shortLinks ShortLink[]
 
   @@index([ownerId])
-}
-
-model ShortLink {
-  id        String   @id @default(cuid())
-  shortCode String   @unique
-  folderId  String
-  folder    Folder   @relation(fields: [folderId], references: [id], onDelete: Cascade)
-  expiresAt DateTime? // null means Never
-  createdAt DateTime @default(now())
-
-  @@index([folderId])
-  @@index([shortCode])
 }
 
 model FolderVenue {
@@ -752,3 +742,4 @@ model FoodVote {
 
   @@unique([userId, validationId])
 }
+
