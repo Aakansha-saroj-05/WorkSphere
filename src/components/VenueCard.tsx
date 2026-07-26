@@ -509,9 +509,9 @@ export function VenueCard({
           <div className="flex-1">
             <h3 className="font-semibold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
               <span>{venue.name}</span>
-              {venue.isClaimed && (
-                <BadgeCheck className="w-4 h-4 text-green-500 shrink-0" title="Verified Host" />
-              )}
+              <span title="Verified Host">
+                <BadgeCheck className="w-4 h-4 text-green-500 shrink-0" />
+              </span>
               {isLoading && (
                 <Loader2 className="w-3 h-3 animate-spin accent-text shrink-0" />
               )}

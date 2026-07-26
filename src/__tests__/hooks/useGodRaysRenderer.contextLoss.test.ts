@@ -67,7 +67,7 @@ describe("useGodRaysRenderer WebGL context loss (#1288)", () => {
 
     jest
       .spyOn(HTMLCanvasElement.prototype, "getContext")
-      .mockImplementation(() => mockGl as unknown as RenderingContext);
+      .mockImplementation(() => mockGl as any);
 
     jest.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
       rafCallbacks.push(cb);

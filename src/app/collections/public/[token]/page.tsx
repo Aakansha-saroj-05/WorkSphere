@@ -1,6 +1,16 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { MapPin, Wifi, Zap, Globe, ArrowLeft, Star, Coffee, Building2, BookOpen } from "lucide-react";
+import {
+  MapPin,
+  Wifi,
+  Zap,
+  Globe,
+  ArrowLeft,
+  Star,
+  Coffee,
+  Building2,
+  BookOpen,
+} from "lucide-react";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +19,9 @@ interface PublicCollectionPageProps {
   params: Promise<{ token: string }>;
 }
 
-export default async function PublicCollectionPage({ params }: PublicCollectionPageProps) {
+export default async function PublicCollectionPage({
+  params,
+}: PublicCollectionPageProps) {
   const { token } = await params;
 
   const folder = await prisma.folder.findUnique({
@@ -39,16 +51,9 @@ export default async function PublicCollectionPage({ params }: PublicCollectionP
     library: <BookOpen className="w-4 h-4 text-emerald-400" />,
   };
 
-  const categoryIcons: Record<string, React.ReactNode> = {
-    cafe: <Coffee className="w-4 h-4 text-amber-400" />,
-    coworking: <Building2 className="w-4 h-4 text-indigo-400" />,
-    library: <BookOpen className="w-4 h-4 text-emerald-400" />,
-  };
-
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 p-6 sm:p-10">
       <div className="max-w-6xl mx-auto space-y-10">
-        
         {/* Navigation back home */}
         <Link
           href="/"
@@ -77,7 +82,8 @@ export default async function PublicCollectionPage({ params }: PublicCollectionP
             <div className="pt-2 text-xs text-zinc-500 flex items-center gap-2">
               <span>Curated by</span>
               <span className="font-bold text-zinc-300">
-                {folder.owner.firstName || "Nomad"} {folder.owner.lastName || "Scout"}
+                {folder.owner.firstName || "Nomad"}{" "}
+                {folder.owner.lastName || "Scout"}
               </span>
               <span>•</span>
               <span>{folder.venues.length} Workspaces</span>
@@ -94,8 +100,12 @@ export default async function PublicCollectionPage({ params }: PublicCollectionP
           {folder.venues.length === 0 ? (
             <div className="p-12 text-center border border-dashed border-zinc-850 rounded-2xl bg-zinc-900/20">
               <MapPin className="w-8 h-8 text-zinc-600 mx-auto mb-3 animate-pulse" />
-              <p className="text-sm font-semibold text-zinc-400">No workspaces added yet</p>
-              <p className="text-xs text-zinc-500 mt-1">Check back later for updates.</p>
+              <p className="text-sm font-semibold text-zinc-400">
+                No workspaces added yet
+              </p>
+              <p className="text-xs text-zinc-500 mt-1">
+                Check back later for updates.
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -109,7 +119,10 @@ export default async function PublicCollectionPage({ params }: PublicCollectionP
                     <div>
                       {/* Title block */}
                       <div className="flex justify-between items-start gap-3 mb-3">
-                        <h3 className="font-bold text-lg text-white group-hover:text-indigo-400 transition-colors truncate" title={venue.name}>
+                        <h3
+                          className="font-bold text-lg text-white group-hover:text-indigo-400 transition-colors truncate"
+                          title={venue.name}
+                        >
                           {venue.name}
                         </h3>
                         {venue.rating && (
@@ -123,7 +136,9 @@ export default async function PublicCollectionPage({ params }: PublicCollectionP
                       {/* Category and Address */}
                       <div className="flex items-center gap-2 mb-4">
                         <span className="p-1.5 rounded-lg bg-zinc-800 border border-zinc-700 inline-flex">
-                          {categoryIcons[venue.category] || <MapPin className="w-4 h-4 text-zinc-400" />}
+                          {categoryIcons[venue.category] || (
+                            <MapPin className="w-4 h-4 text-zinc-400" />
+                          )}
                         </span>
                         <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
                           {venue.category}
@@ -142,7 +157,10 @@ export default async function PublicCollectionPage({ params }: PublicCollectionP
                     <div className="grid grid-cols-3 gap-2 p-3 bg-zinc-950/60 rounded-xl border border-zinc-900 text-center text-[10px] font-bold uppercase tracking-wider text-zinc-400">
                       <div className="flex flex-col items-center justify-center p-1.5 border-r border-zinc-900 gap-1">
                         <Wifi className="w-3.5 h-3.5 text-blue-400" />
-                        <span>WiFi {venue.wifiQuality ? `${venue.wifiQuality}/5` : "N/A"}</span>
+                        <span>
+                          WiFi{" "}
+                          {venue.wifiQuality ? `${venue.wifiQuality}/5` : "N/A"}
+                        </span>
                       </div>
                       <div className="flex flex-col items-center justify-center p-1.5 border-r border-zinc-900 gap-1">
                         <Zap className="w-3.5 h-3.5 text-yellow-400" />
@@ -150,7 +168,9 @@ export default async function PublicCollectionPage({ params }: PublicCollectionP
                       </div>
                       <div className="flex flex-col items-center justify-center p-1.5 gap-1">
                         <span className="text-emerald-400 text-xs">🔇</span>
-                        <span className="truncate max-w-full">{venue.noiseLevel || "Normal"}</span>
+                        <span className="truncate max-w-full">
+                          {venue.noiseLevel || "Normal"}
+                        </span>
                       </div>
                     </div>
                   </div>

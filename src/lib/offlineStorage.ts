@@ -325,7 +325,7 @@ export async function saveSearchOffline(
   results: OfflineVenue[],
 ): Promise<void> {
   const lockKey = `worksphere-search-cache-${query.trim().toLowerCase().slice(0, 64)}`;
-  
+
   const cacheOperation = async () => {
     return withWebLock(async () => {
       const database = await initOfflineDB();
@@ -349,10 +349,18 @@ export async function saveSearchOffline(
   };
 
   // Guard window.withLeaderLock safely
-  if (typeof window !== 'undefined' && typeof (window as any).withLeaderLock === 'function') {
-    const { acquired } = await (window as any).withLeaderLock(lockKey, cacheOperation);
+  if (
+    typeof window !== "undefined" &&
+    typeof (window as any).withLeaderLock === "function"
+  ) {
+    const { acquired } = await (window as any).withLeaderLock(
+      lockKey,
+      cacheOperation,
+    );
     if (!acquired) {
-      console.log(`[Offline] Skipping search cache write for "${query}" — another tab is already indexing`);
+      console.log(
+        `[Offline] Skipping search cache write for "${query}" — another tab is already indexing`,
+      );
     }
   } else {
     // Fall back to simple web lock path if leader lock isn't available
@@ -1013,4 +1021,24 @@ export async function removePendingFavorite(id: string): Promise<void> {
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error);
   });
+}
+
+export async function executeWithRetry<T>(
+  fn: () => Promise<T>,
+  retries = 3,
+  delayMs = 10,
+): Promise<T> {
+  let attempt = 0;
+  while (attempt < retries) {
+    try {
+      return await fn();
+    } catch (err) {
+      attempt++;
+      if (attempt >= retries) throw err;
+      await new Promise((r) =>
+        setTimeout(r, delayMs * Math.pow(2, attempt - 1)),
+      );
+    }
+  }
+  throw new Error("Max retries exceeded");
 }

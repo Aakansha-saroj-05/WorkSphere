@@ -33,10 +33,12 @@ jest.mock("@/lib/prisma", () => ({
 describe("Folder Short Links API & Redirection", () => {
   const mockAuth = auth as unknown as jest.Mock;
   const mockHasFolderAccess = hasFolderAccess as unknown as jest.Mock;
-  const mockFindManyShortLinks = prisma.shortLink.findMany as jest.Mock;
-  const mockFindUniqueShortLink = prisma.shortLink.findUnique as jest.Mock;
-  const mockCreateShortLink = prisma.shortLink.create as jest.Mock;
-  const mockDeleteShortLink = prisma.shortLink.delete as jest.Mock;
+  const mockFindManyShortLinks = (prisma as any).shortLink
+    .findMany as jest.Mock;
+  const mockFindUniqueShortLink = (prisma as any).shortLink
+    .findUnique as jest.Mock;
+  const mockCreateShortLink = (prisma as any).shortLink.create as jest.Mock;
+  const mockDeleteShortLink = (prisma as any).shortLink.delete as jest.Mock;
   const mockUpdateFolder = prisma.folder.update as jest.Mock;
 
   beforeEach(() => {

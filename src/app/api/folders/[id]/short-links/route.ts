@@ -59,7 +59,7 @@ export async function GET(
       );
     }
 
-    const shortLinks = await prisma.shortLink.findMany({
+    const shortLinks = await (prisma as any).shortLink.findMany({
       where: { folderId },
       orderBy: { createdAt: "desc" },
     });
@@ -133,7 +133,7 @@ export async function POST(
       }
 
       // Check uniqueness in database
-      const existing = await prisma.shortLink.findUnique({
+      const existing = await (prisma as any).shortLink.findUnique({
         where: { shortCode: normalizedCode },
       });
 
@@ -151,7 +151,7 @@ export async function POST(
       const maxAttempts = 10;
       while (attempts < maxAttempts) {
         const candidate = generateRandomShortCode();
-        const existing = await prisma.shortLink.findUnique({
+        const existing = await (prisma as any).shortLink.findUnique({
           where: { shortCode: candidate },
         });
 
@@ -194,7 +194,7 @@ export async function POST(
     }
 
     // Create ShortLink
-    const shortLink = await prisma.shortLink.create({
+    const shortLink = await (prisma as any).shortLink.create({
       data: {
         shortCode: finalShortCode,
         folderId,

@@ -300,7 +300,7 @@ self.onmessage = async (event: MessageEvent) => {
 };
 
 // ─── Error Handler ───────────────────────────────────────────────────────────
-self.onerror = (event: ErrorEvent) => {
+self.onerror = (event: any) => {
   self.postMessage({
     type: "error",
     error: `Worker error: ${event.message}`,

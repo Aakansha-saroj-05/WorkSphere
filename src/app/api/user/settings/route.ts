@@ -161,7 +161,7 @@ export async function PATCH(req: Request) {
 
     const updated = await prisma.user.upsert({
       where: { id: userId },
-      create: { id: userId, ...dataToUpdate },
+      create: { id: userId, ...(dataToUpdate as any) },
       update: dataToUpdate,
     });
 

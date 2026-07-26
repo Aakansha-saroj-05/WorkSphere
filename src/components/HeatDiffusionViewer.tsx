@@ -275,12 +275,11 @@ export function HeatDiffusionViewer({
     (async () => {
       if (typeof WebAssembly !== "undefined") {
         try {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
+          // @ts-expect-error – wasm pkg not compiled yet, dynamic import path is intentional
           const mod =
             await import("../../wasm/heat-diffusion/pkg/heat_diffusion.js");
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
+
+          // @ts-expect-error – mod.default may not exist in TS but present at runtime
           if (typeof mod.default === "function") await mod.default();
           if (!cancelled) {
             wasmRef.current = mod as WasmMod;

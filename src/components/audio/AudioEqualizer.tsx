@@ -145,6 +145,9 @@ export function AudioEqualizer({
   const [bandGains, setBandGains] = useState<number[]>(
     initialGains || [0, 0, 0, 0, 0],
   );
+  const [batteryLevel, setBatteryLevel] = useState<number | null>(null);
+  const [batteryCharging, setBatteryCharging] = useState<boolean | null>(null);
+  const batteryAutoPausedRef = useRef<boolean>(false);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const masterGainRef = useRef<GainNode | null>(null);

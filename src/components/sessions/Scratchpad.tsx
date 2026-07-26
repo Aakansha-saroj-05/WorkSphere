@@ -127,9 +127,6 @@ export default function Scratchpad({ sessionId }: Props) {
     onOpen: () => {
       sendSyncRequest();
     },
-    onReconnect: () => {
-      sendSyncRequest();
-    },
     onMessage: async (e) => {
       try {
         const msg = JSON.parse(e.data);

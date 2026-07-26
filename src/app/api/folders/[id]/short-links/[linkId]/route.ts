@@ -35,7 +35,7 @@ export async function DELETE(
     }
 
     // Verify the short link belongs to this folder
-    const shortLink = await prisma.shortLink.findUnique({
+    const shortLink = await (prisma as any).shortLink.findUnique({
       where: { id: linkId },
     });
 
@@ -46,7 +46,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.shortLink.delete({
+    await (prisma as any).shortLink.delete({
       where: { id: linkId },
     });
 

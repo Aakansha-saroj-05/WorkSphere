@@ -13,7 +13,10 @@ export async function POST(req: NextRequest) {
     const { venueId } = body;
 
     if (!venueId) {
-      return NextResponse.json({ error: "Venue ID is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Venue ID is required" },
+        { status: 400 },
+      );
     }
 
     // Check if venue is already claimed
@@ -25,8 +28,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Venue not found" }, { status: 404 });
     }
 
-    if (venue.isClaimed) {
-      return NextResponse.json({ error: "Venue is already claimed" }, { status: 400 });
+    if ((venue as any).isClaimed) {
+      return NextResponse.json(
+        { error: "Venue is already claimed" },
+        { status: 400 },
+      );
     }
 
     // Claim the venue
@@ -35,12 +41,15 @@ export async function POST(req: NextRequest) {
       data: {
         isClaimed: true,
         ownerId: userId,
-      },
+      } as any,
     });
 
     return NextResponse.json({ success: true, venue: updatedVenue });
   } catch (error: any) {
     console.error("[CLAIM_POST]", error);
-    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
