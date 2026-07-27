@@ -178,7 +178,14 @@ export function buildComparisonChartData(
   });
 }
 
+/** 
+ *  Props for the MultiCityComparison component.
+ */
 interface MultiCityComparisonProps {
+  /**
+   * Optional list of venues used to initialize the comparison view
+   * before fresh venue data is fetched.
+   */
   initialVenues?: Venue[];
 }
 
@@ -208,7 +215,13 @@ export function MultiCityComparison({
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
 
-  // Sync URL search params whenever selectedCities or selectedFilters changes
+  /**
+   * Synchronizes the selected cities and active filters with the URL
+   * search parameters.
+   *
+   * This keeps the comparison state shareable and ensures browser
+   * navigation (back/forward) restores the current selection.
+   */
   const updateUrlParams = useCallback(
     (cities: string[], filters: string[]) => {
       const params = new URLSearchParams(searchParams.toString());
@@ -236,8 +249,11 @@ export function MultiCityComparison({
     },
     [router, searchParams],
   );
-
-  // Synchronize state on browser back/forward navigation when searchParams update externally
+  /**
+   * Updates local component state whenever the URL search parameters
+   * change externally (for example, through browser back/forward
+   * navigation), keeping the UI synchronized with the URL.
+   */
   useEffect(() => {
     const currentParamsString = searchParams.toString();
     if (currentParamsString !== prevParamsString) {
